@@ -1,0 +1,6 @@
+
+State Machine - |pin_test_top|state
+Name state.ST_ROWCOL state.ST_BAR state.ST_DIGSEG 
+state.ST_ROWCOL 0 0 0 
+state.ST_DIGSEG 1 0 1 
+state.ST_BAR 1 1 0 
