@@ -1,0 +1,118 @@
+// =============================================================
+//  pin_test_top.v   ピンアサイン確認用テストパターン
+//
+//  DE10-Nano + FPGAPiano シールド (sch_rev2)
+//
+//  ■ 極性（回路図のドライバICから確定）
+//    行 m_r   : PチャネルFET ハイサイド → ゲートLowで点灯 = Active Low
+//    列 m_c   : DRV777(シンクドライバ)  → 入力Highで点灯  = Active High
+//    緑 m_c8g : 同じDRV777の入力(1ビット) = Active High
+//    7セグ seg: PチャネルFET           → Active Low
+//    桁 dig   : 7セグ側ドライバ依存（暫定Active Low）
+//
+//    → 行と列で極性が逆なので、グループごとにパラメータで指定。
+//    実機で光らなければ該当グループのパラメータを反転する。
+//
+//  ■ m_c8g は1ビット（DRV777の1入力）。行スキャンと時分割で
+//    4行分の当たり判定緑を表示する設計。テストでは「いずれかの
+//    スイッチが押されたら点灯」で配線確認する。
+//
+//  ■ テストモード（mode_sw[1:0]）
+//    00: 全点灯  01: 行スキャン  10: 列スキャン  11: スイッチ+バー
+// =============================================================
+
+module pin_test_top #(
+    parameter CLK_HZ   = 50_000_000,
+    parameter SCAN_HZ  = 2,
+    // 各グループの点灯極性: 1=Active Low(反転して出力), 0=Active High
+    parameter AL_ROW   = 1,   // 行 m_r        (FET → Active Low)
+    parameter AL_COL   = 0,   // 列 m_c, m_c8g (DRV777 → Active High)
+    parameter AL_SEG   = 1,   // 7セグ seg     (FET → Active Low)
+    parameter AL_DIG   = 1,   // 桁 dig        (暫定 Active Low)
+    parameter AL_BAR   = 0    // プログレスバー p (暫定 Active High)
+)(
+    input  wire        clk,
+    input  wire        rst_n,
+    input  wire [1:0]  mode_sw,
+    input  wire [3:0]  sw_in,
+
+    output wire [3:0]  m_r,
+    output wire [9:0]  m_c,
+    output wire        m_c8g,    // ★1ビットに修正
+    output wire [6:0]  seg,
+    output wire [3:0]  dig,
+    output wire [9:0]  p
+);
+
+    // 内部は正論理(1=点灯)
+    reg [3:0]  r_mr;
+    reg [9:0]  r_mc;
+    reg        r_mc8g;
+    reg [6:0]  r_seg;
+    reg [3:0]  r_dig;
+    reg [9:0]  r_p;
+
+    localparam DIV = CLK_HZ / SCAN_HZ;
+    reg [31:0] div_cnt;
+    reg [3:0]  scan_idx;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            div_cnt  <= 0;
+            scan_idx <= 0;
+        end else if (div_cnt >= DIV - 1) begin
+            div_cnt  <= 0;
+            scan_idx <= scan_idx + 1'b1;
+        end else begin
+            div_cnt <= div_cnt + 1'b1;
+        end
+    end
+
+    always @(*) begin
+        r_mr   = 4'b0000;
+        r_mc   = 10'b0;
+        r_mc8g = 1'b0;
+        r_seg  = 7'b0;
+        r_dig  = 4'b0000;
+        r_p    = 10'b0;
+
+        case (mode_sw)
+        2'b00: begin   // 全点灯
+            r_mr   = 4'b1111;
+            r_mc   = 10'b11_1111_1111;
+            r_mc8g = 1'b1;
+            r_seg  = 7'b111_1111;
+            r_dig  = 4'b1111;
+            r_p    = 10'b11_1111_1111;
+        end
+        2'b01: begin   // 行スキャン
+            r_mc = 10'b11_1111_1111;
+            case (scan_idx[1:0])
+                2'd0: r_mr = 4'b0001;
+                2'd1: r_mr = 4'b0010;
+                2'd2: r_mr = 4'b0100;
+                2'd3: r_mr = 4'b1000;
+            endcase
+        end
+        2'b10: begin   // 列スキャン
+            r_mr = 4'b1111;
+            if (scan_idx <= 9) r_mc = (10'b1 << scan_idx);
+        end
+        2'b11: begin   // スイッチ当たり判定 + バー
+            r_mr   = 4'b1111;
+            r_mc[8]= 1'b1;            // 9列目(赤)
+            r_mc8g = |sw_in;         // いずれか押されたら緑点灯
+            r_p    = (10'b1 << (scan_idx > 9 ? 10 : scan_idx)) - 10'b1;
+        end
+        endcase
+    end
+
+    // 極性変換（グループごと）
+    assign m_r   = AL_ROW ? ~r_mr   : r_mr;
+    assign m_c   = AL_COL ? ~r_mc   : r_mc;
+    assign m_c8g = AL_COL ? ~r_mc8g : r_mc8g;
+    assign seg   = AL_SEG ? ~r_seg  : r_seg;
+    assign dig   = AL_DIG ? ~r_dig  : r_dig;
+    assign p     = AL_BAR ? ~r_p    : r_p;
+
+endmodule
