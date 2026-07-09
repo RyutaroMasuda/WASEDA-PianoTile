@@ -1,5 +1,6 @@
 # 動いている様子
-[![動いている様子](images\image-fda.png)](https://www.youtube.com/shorts/dmGggVU54so?feature=share)
+[![YouTube](https://img.shields.io/badge/YouTube-Watch-red?logo=youtube)](https://www.youtube.com/shorts/dmGggVU54so)
+[![動いている動画](images/image-fda.png)](https://www.youtube.com/shorts/dmGggVU54so?feature=share)
 
 # ハードウェアの説明
 ![alt text](image.png)
