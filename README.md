@@ -1,3 +1,8 @@
+# 動いている様子
+[![動いている様子](images\image-fda.png)](https://youtube.com/shorts/0cprsA0-z8M?feature=share)
+
+# ハードウェアの説明
+![alt text](image.png)
 # quarutus
 
 DE10-Nano + FPGAPiano シールド（回路図 rev2）向けの **ピンアサイン／極性確認用 Quartus Prime プロジェクト**です。
