@@ -1,7 +1,5 @@
 # 動いている様子
-[![YouTube](https://img.shields.io/badge/YouTube-Watch-red?logo=youtube)](https://www.youtube.com/shorts/dmGggVU54so)
-[![動いている動画](images/image-fda.png)](https://www.youtube.com/shorts/dmGggVU54so?feature=share)
-
+[![動画タイトル](https://img.youtube.com/vi/dmGggVU54so/hqdefault.jpg)](https://www.youtube.com/shorts/dmGggVU54so)
 # ハードウェアの説明
 ![alt text](image.png)
 # quarutus
